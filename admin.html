@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Cooperativa Energetica</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #141210; color: #F5F1EA; }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+  .number-tab { font-variant-numeric: tabular-nums; }
+  input, select, textarea, button { font-family: inherit; }
+  .input { background: rgba(245,241,234,0.1); border: 1px solid rgba(245,241,234,0.2); border-radius: 4px; padding: 8px 12px; color: #F5F1EA; }
+  .input:focus { outline: none; border-color: #D4A84B; }
+  .btn { background: #D4A84B; color: #141210; padding: 8px 16px; border-radius: 999px; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-ghost { background: transparent; color: #F5F1EA; border: 1px solid rgba(245,241,234,0.3); }
+  .tab.active { background: #D4A84B; color: #141210; }
+  .stato-attivo { background: #6B9E4F; color: white; }
+  .stato-pending { background: #D4A84B; color: #141210; }
+  .stato-sospeso, .stato-uscito { background: #C84B31; color: white; }
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE -->
+<div id="auth-gate" class="min-h-screen flex items-center justify-center px-6">
+  <div class="max-w-md w-full">
+    <h1 class="serif text-4xl font-bold mb-6">Admin</h1>
+    <p class="text-[#F5F1EA]/60 mb-6 text-sm">Inserisci il token di amministrazione (ADMIN_TOKEN dal .env).</p>
+    <form onsubmit="login(event)" class="space-y-4">
+      <input type="password" id="token-input" placeholder="ADMIN_TOKEN" required class="input w-full" autocomplete="current-password">
+      <button type="submit" class="btn w-full">Accedi</button>
+    </form>
+    <p class="text-xs text-[#C84B31] mt-4 hidden" id="auth-error">Token non valido.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="border-b border-[#F5F1EA]/10 px-6 py-4 flex items-center justify-between sticky top-0 bg-[#141210] z-20">
+    <div class="flex items-center gap-6">
+      <div class="serif text-xl font-bold">Admin · Cooperativa</div>
+      <nav class="flex gap-2 text-sm">
+        <button onclick="setTab('overview')" class="tab px-3 py-1 rounded" data-tab="overview">Panoramica</button>
+        <button onclick="setTab('soci')" class="tab px-3 py-1 rounded" data-tab="soci">Soci</button>
+        <button onclick="setTab('pun')" class="tab px-3 py-1 rounded" data-tab="pun">PUN</button>
+        <button onclick="setTab('bollette')" class="tab px-3 py-1 rounded" data-tab="bollette">Bollette</button>
+        <button onclick="setTab('config')" class="tab px-3 py-1 rounded" data-tab="config">Config</button>
+      </nav>
+    </div>
+    <button onclick="logout()" class="btn btn-ghost text-sm">Esci</button>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <!-- Panoramica -->
+    <section data-panel="overview" class="panel">
+      <h2 class="serif text-3xl mb-6">Panoramica</h2>
+      <div class="grid md:grid-cols-4 gap-4" id="overview-cards">
+        <div class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6">
+          <div class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 mb-2">Soci attivi</div>
+          <div class="serif text-4xl number-tab" id="ov-attivi">—</div>
+        </div>
+        <div class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6">
+          <div class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 mb-2">Soci totali</div>
+          <div class="serif text-4xl number-tab" id="ov-totali">—</div>
+        </div>
+        <div class="bg-[#D4A84B] text-[#141210] rounded-lg p-6">
+          <div class="text-xs uppercase tracking-widest mb-2">Quota corrente</div>
+          <div class="serif text-4xl number-tab">€<span id="ov-quota">—</span></div>
+        </div>
+        <div class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6">
+          <div class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 mb-2">PUN oggi</div>
+          <div class="serif text-4xl number-tab">€<span id="ov-pun">—</span></div>
+        </div>
+      </div>
+
+      <div class="mt-8 bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6">
+        <h3 class="serif text-xl mb-4">Ricavi previsti annui</h3>
+        <div class="text-sm text-[#F5F1EA]/70">
+          Soci attivi × quota versata = <strong class="text-[#F5F1EA]">€<span id="ov-ricavi">—</span></strong><br>
+          Costi fissi annui = <strong class="text-[#F5F1EA]">€<span id="ov-costi">—</span></strong><br>
+          Copertura: <strong id="ov-copertura">—</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- Soci -->
+    <section data-panel="soci" class="panel hidden">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="serif text-3xl">Soci</h2>
+        <div class="flex gap-2">
+          <input type="text" id="soci-filtro" placeholder="Cerca per nome, email..." class="input">
+          <a id="btn-export" href="#" class="btn">Export CSV</a>
+        </div>
+      </div>
+      <div class="overflow-x-auto bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg">
+        <table class="w-full text-sm">
+          <thead class="text-left text-xs uppercase tracking-widest text-[#F5F1EA]/60 border-b border-[#F5F1EA]/10">
+            <tr>
+              <th class="py-3 px-4">#</th>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>POD</th>
+              <th>Stato</th>
+              <th>Versato</th>
+              <th>Rinnovo</th>
+              <th>Adesione</th>
+            </tr>
+          </thead>
+          <tbody id="soci-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PUN -->
+    <section data-panel="pun" class="panel hidden">
+      <h2 class="serif text-3xl mb-6">Gestione PUN</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <form onsubmit="addPun(event)" class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6">
+          <h3 class="serif text-xl mb-4">Inserisci PUN del giorno</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Data</label>
+              <input type="date" name="data" required class="input w-full" id="pun-data-input">
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Valore €/MWh</label>
+              <input type="number" step="0.01" name="valore" required class="input w-full" placeholder="107.30">
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Fonte</label>
+              <select name="fonte" class="input w-full">
+                <option value="manuale" class="bg-[#141210]">Manuale</option>
+                <option value="api_gme" class="bg-[#141210]">API GME</option>
+                <option value="altro" class="bg-[#141210]">Altro</option>
+              </select>
+            </div>
+            <button class="btn w-full">Salva PUN</button>
+          </div>
+        </form>
+        <div class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6">
+          <h3 class="serif text-xl mb-4">Storico recente</h3>
+          <div id="pun-storico" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bollette -->
+    <section data-panel="bollette" class="panel hidden">
+      <h2 class="serif text-3xl mb-6">Carica bolletta mensile</h2>
+      <form onsubmit="addBolletta(event)" class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6 max-w-2xl">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Socio</label>
+            <select name="socioId" required class="input w-full" id="bolletta-socio"></select>
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Mese</label>
+            <select name="mese" required class="input w-full">
+              <option value="1" class="bg-[#141210]">Gennaio</option>
+              <option value="2" class="bg-[#141210]">Febbraio</option>
+              <option value="3" class="bg-[#141210]">Marzo</option>
+              <option value="4" class="bg-[#141210]">Aprile</option>
+              <option value="5" class="bg-[#141210]">Maggio</option>
+              <option value="6" class="bg-[#141210]">Giugno</option>
+              <option value="7" class="bg-[#141210]">Luglio</option>
+              <option value="8" class="bg-[#141210]">Agosto</option>
+              <option value="9" class="bg-[#141210]">Settembre</option>
+              <option value="10" class="bg-[#141210]">Ottobre</option>
+              <option value="11" class="bg-[#141210]">Novembre</option>
+              <option value="12" class="bg-[#141210]">Dicembre</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Anno</label>
+            <input type="number" name="anno" required min="2025" max="2100" class="input w-full" value="2026">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">kWh consumati</label>
+            <input type="number" step="0.01" name="kwhConsumati" required class="input w-full">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Importo pagato (€)</label>
+            <input type="number" step="0.01" name="importoPagato" required class="input w-full">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">PUN medio mese (€/MWh)</label>
+            <input type="number" step="0.01" name="punMedioMese" class="input w-full">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Benchmark mercato libero (€)</label>
+            <input type="number" step="0.01" name="importoMercatoLibero" class="input w-full">
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Note (opzionali)</label>
+            <textarea name="note" class="input w-full" rows="2"></textarea>
+          </div>
+          <button class="btn md:col-span-2">Salva bolletta</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Config -->
+    <section data-panel="config" class="panel hidden">
+      <h2 class="serif text-3xl mb-6">Configurazione cooperativa</h2>
+      <form onsubmit="saveConfig(event)" class="bg-[#F5F1EA]/5 border border-[#F5F1EA]/10 rounded-lg p-6 max-w-2xl">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Nome cooperativa</label>
+            <input type="text" name="nome_cooperativa" class="input w-full" id="cfg-nome">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Sede legale</label>
+            <input type="text" name="sede_legale" class="input w-full" id="cfg-sede">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Costi fissi annui (€)</label>
+            <input type="number" step="0.01" name="costi_fissi_annui" class="input w-full" id="cfg-costi">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Minimo soci apertura</label>
+            <input type="number" name="minimo_soci_apertura" class="input w-full" id="cfg-minimo">
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 block mb-2">Stato progetto</label>
+            <select name="stato_progetto" class="input w-full" id="cfg-stato">
+              <option value="raccolta" class="bg-[#141210]">Raccolta adesioni</option>
+              <option value="attiva" class="bg-[#141210]">Attiva</option>
+              <option value="sospesa" class="bg-[#141210]">Sospesa</option>
+              <option value="chiusa" class="bg-[#141210]">Chiusa</option>
+            </select>
+          </div>
+          <label class="md:col-span-2 flex items-center gap-2">
+            <input type="checkbox" name="testi_legali_validati" id="cfg-legali" class="accent-[#D4A84B]">
+            <span class="text-sm">Testi legali validati da avvocato (rimuove banner rosso)</span>
+          </label>
+          <button class="btn md:col-span-2">Salva configurazione</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script>
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001' : 'https://cooperativa-energetica-production.up.railway.app';
+  const fmtInt = n => new Intl.NumberFormat('it-IT').format(Math.round(n));
+  const fmtE = n => n == null ? '—' : new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const fmtData = iso => iso ? new Date(iso).toLocaleDateString('it-IT') : '—';
+  let TOKEN = null, SOCI_CACHE = [];
+
+  function getAuth() { return { Authorization: 'Bearer ' + TOKEN }; }
+
+  window.login = async (e) => {
+    e.preventDefault();
+    TOKEN = document.getElementById('token-input').value;
+    try {
+      const r = await fetch(`${API_BASE}/api/admin/soci`, { headers: getAuth() });
+      if (!r.ok) throw new Error();
+      localStorage.setItem('admin_token', TOKEN);
+      document.getElementById('auth-gate').remove();
+      document.getElementById('app').classList.remove('hidden');
+      setTab('overview');
+      loadOverview();
+    } catch {
+      document.getElementById('auth-error').classList.remove('hidden');
+    }
+  };
+  window.logout = () => { localStorage.removeItem('admin_token'); location.reload(); };
+
+  window.setTab = (name) => {
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    if (name === 'overview') loadOverview();
+    if (name === 'soci') loadSoci();
+    if (name === 'pun') loadPun();
+    if (name === 'bollette') loadBolletteForm();
+    if (name === 'config') loadConfig();
+  };
+
+  async function loadOverview() {
+    const r = await fetch(`${API_BASE}/api/stats`);
+    const s = await r.json();
+    document.getElementById('ov-attivi').textContent = fmtInt(s.soci_attivi);
+    document.getElementById('ov-totali').textContent = fmtInt(s.soci_totali);
+    document.getElementById('ov-quota').textContent = fmtE(s.quota_corrente);
+    document.getElementById('ov-pun').textContent = fmtE(s.pun_corrente || 0);
+    const ricavi = (s.soci_attivi || 0) * (s.quota_corrente || 0);
+    document.getElementById('ov-ricavi').textContent = fmtE(ricavi);
+    document.getElementById('ov-costi').textContent = fmtE(s.costi_fissi_annui);
+    const cop = s.costi_fissi_annui > 0 ? (ricavi / s.costi_fissi_annui * 100) : 0;
+    const el = document.getElementById('ov-copertura');
+    el.textContent = Math.round(cop) + '%';
+    el.className = cop >= 100 ? 'text-[#6B9E4F]' : cop >= 50 ? 'text-[#D4A84B]' : 'text-[#C84B31]';
+  }
+
+  async function loadSoci() {
+    const r = await fetch(`${API_BASE}/api/admin/soci`, { headers: getAuth() });
+    SOCI_CACHE = await r.json();
+    document.getElementById('btn-export').href = `${API_BASE}/api/admin/export-csv`;
+    document.getElementById('btn-export').onclick = async (e) => {
+      e.preventDefault();
+      const r = await fetch(`${API_BASE}/api/admin/export-csv`, { headers: getAuth() });
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'soci.csv'; a.click();
+    };
+    renderSoci(SOCI_CACHE);
+    document.getElementById('soci-filtro').oninput = (e) => {
+      const q = e.target.value.toLowerCase();
+      renderSoci(SOCI_CACHE.filter(s =>
+        (s.nome + ' ' + s.cognome + ' ' + s.email + ' ' + (s.pod||'')).toLowerCase().includes(q)
+      ));
+    };
+  }
+
+  function renderSoci(soci) {
+    document.getElementById('soci-tbody').innerHTML = soci.map(s => `
+      <tr class="border-b border-[#F5F1EA]/5">
+        <td class="py-3 px-4 number-tab">#${s.numero_socio}</td>
+        <td>${s.nome} ${s.cognome}</td>
+        <td class="text-[#F5F1EA]/70">${s.email}</td>
+        <td class="font-mono text-xs">${s.pod || '—'}</td>
+        <td><span class="inline-block text-xs uppercase px-2 py-0.5 rounded stato-${s.stato}">${s.stato}</span></td>
+        <td class="number-tab">€${fmtE(s.quota_pagata || 0)}</td>
+        <td class="text-xs text-[#F5F1EA]/60">${fmtData(s.prossimo_rinnovo)}</td>
+        <td class="text-xs text-[#F5F1EA]/60">${fmtData(s.data_adesione)}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadPun() {
+    document.getElementById('pun-data-input').value = new Date().toISOString().slice(0,10);
+    const r = await fetch(`${API_BASE}/api/pun`);
+    const pun = await r.json();
+    document.getElementById('pun-storico').innerHTML = (pun.ultimi30 || []).slice().reverse().map(p => `
+      <div class="flex justify-between py-2 border-b border-[#F5F1EA]/5">
+        <span>${fmtData(p.data)}</span>
+        <span class="number-tab">€${fmtE(p.valore_euro_mwh)}</span>
+      </div>`).join('');
+  }
+
+  window.addPun = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const r = await fetch(`${API_BASE}/api/admin/pun`, {
+      method: 'POST', headers: { ...getAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: fd.get('data'),
+        valore: parseFloat(fd.get('valore')),
+        fonte: fd.get('fonte'),
+      }),
+    });
+    if (r.ok) { e.target.reset(); document.getElementById('pun-data-input').value = new Date().toISOString().slice(0,10); loadPun(); }
+    else alert('Errore salvataggio PUN');
+  };
+
+  async function loadBolletteForm() {
+    if (SOCI_CACHE.length === 0) {
+      const r = await fetch(`${API_BASE}/api/admin/soci`, { headers: getAuth() });
+      SOCI_CACHE = await r.json();
+    }
+    document.getElementById('bolletta-socio').innerHTML = SOCI_CACHE
+      .filter(s => s.stato === 'attivo')
+      .map(s => `<option value="${s.id}" class="bg-[#141210]">#${s.numero_socio} ${s.nome} ${s.cognome} — ${s.pod || s.email}</option>`).join('');
+  }
+
+  window.addBolletta = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      socioId: fd.get('socioId'),
+      mese: parseInt(fd.get('mese')),
+      anno: parseInt(fd.get('anno')),
+      kwhConsumati: parseFloat(fd.get('kwhConsumati')),
+      importoPagato: parseFloat(fd.get('importoPagato')),
+    };
+    if (fd.get('punMedioMese')) payload.punMedioMese = parseFloat(fd.get('punMedioMese'));
+    if (fd.get('importoMercatoLibero')) payload.importoMercatoLibero = parseFloat(fd.get('importoMercatoLibero'));
+    if (fd.get('note')) payload.note = fd.get('note');
+    const r = await fetch(`${API_BASE}/api/admin/bolletta`, {
+      method: 'POST', headers: { ...getAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (r.ok) { e.target.reset(); alert('Bolletta salvata.'); }
+    else alert('Errore salvataggio bolletta');
+  };
+
+  async function loadConfig() {
+    const r = await fetch(`${API_BASE}/api/admin/config`, { headers: getAuth() });
+    const c = await r.json();
+    document.getElementById('cfg-nome').value = c.nome_cooperativa || '';
+    document.getElementById('cfg-sede').value = c.sede_legale || '';
+    document.getElementById('cfg-costi').value = c.costi_fissi_annui || '';
+    document.getElementById('cfg-minimo').value = c.minimo_soci_apertura || '';
+    document.getElementById('cfg-stato').value = c.stato_progetto || 'raccolta';
+    document.getElementById('cfg-legali').checked = !!c.testi_legali_validati;
+  }
+
+  window.saveConfig = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {};
+    if (fd.get('nome_cooperativa')) payload.nome_cooperativa = fd.get('nome_cooperativa');
+    if (fd.get('sede_legale')) payload.sede_legale = fd.get('sede_legale');
+    if (fd.get('costi_fissi_annui')) payload.costi_fissi_annui = parseFloat(fd.get('costi_fissi_annui'));
+    if (fd.get('minimo_soci_apertura')) payload.minimo_soci_apertura = parseInt(fd.get('minimo_soci_apertura'));
+    if (fd.get('stato_progetto')) payload.stato_progetto = fd.get('stato_progetto');
+    payload.testi_legali_validati = !!fd.get('testi_legali_validati');
+    const r = await fetch(`${API_BASE}/api/admin/config`, {
+      method: 'POST', headers: { ...getAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (r.ok) alert('Configurazione salvata.');
+    else alert('Errore salvataggio configurazione');
+  };
+
+  // Auto-login if token in localStorage
+  const saved = localStorage.getItem('admin_token');
+  if (saved) {
+    TOKEN = saved;
+    fetch(`${API_BASE}/api/admin/soci`, { headers: getAuth() }).then(r => {
+      if (r.ok) {
+        document.getElementById('auth-gate').remove();
+        document.getElementById('app').classList.remove('hidden');
+        setTab('overview');
+      }
+    }).catch(() => {});
+  }
+</script>
+</body>
+</html>

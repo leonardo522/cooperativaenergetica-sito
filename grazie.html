@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benvenuto! · Cooperativa Energetica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #F5F1EA; color: #141210; }
+  h1, h2, .serif { font-family: 'Fraunces', Georgia, serif; }
+  .display { font-family: 'Fraunces', serif; font-weight: 700; letter-spacing: -0.03em; line-height: 0.95; }
+  .number-tab { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<div class="min-h-screen flex items-center justify-center px-6 py-16">
+  <div class="max-w-2xl w-full text-center">
+    <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest mb-8 text-[#1F3A2E]">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F3A2E" stroke-width="2.5">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+      Iscrizione completata
+    </div>
+
+    <h1 class="display text-6xl md:text-8xl mb-6">
+      Benvenuto<br>
+      <span class="italic font-normal text-[#1F3A2E]">in cooperativa.</span>
+    </h1>
+
+    <p class="text-xl text-[#141210]/80 mb-8">
+      Il pagamento è stato processato. Tra pochi minuti riceverai email di benvenuto
+      con il tuo <strong>numero socio</strong> e il link alla <strong>dashboard personale</strong>.
+    </p>
+
+    <div class="bg-[#1F3A2E] text-[#F5F1EA] rounded-lg p-8 mb-8 text-left">
+      <div class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 mb-4">Stato live della cooperativa</div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <div class="serif text-4xl number-tab" id="soci">—</div>
+          <div class="text-xs text-[#F5F1EA]/60">soci attivi</div>
+        </div>
+        <div>
+          <div class="serif text-4xl number-tab">€<span id="quota">—</span></div>
+          <div class="text-xs text-[#F5F1EA]/60">quota annua</div>
+        </div>
+        <div>
+          <div class="serif text-4xl number-tab">€<span id="pun">—</span></div>
+          <div class="text-xs text-[#F5F1EA]/60">PUN/MWh oggi</div>
+        </div>
+      </div>
+      <div class="mt-6 pt-6 border-t border-[#F5F1EA]/20 text-sm" id="messaggio">
+        Caricamento stato…
+      </div>
+    </div>
+
+    <div class="bg-[#D4A84B]/15 border-2 border-[#D4A84B] rounded-lg p-6 mb-8 text-left">
+      <h3 class="serif text-2xl mb-3">Cosa succede ora</h3>
+      <ol class="space-y-3 text-sm text-[#141210]/80 list-decimal list-inside">
+        <li><strong>Entro 24 ore:</strong> email con numero socio e link dashboard</li>
+        <li><strong>Entro 10 giorni:</strong> ti contattiamo per attivare la fornitura</li>
+        <li><strong>Prossimi 30-60 giorni:</strong> cambio fornitore automatico, nessuna pratica a tuo carico</li>
+        <li><strong>Tra 12 mesi:</strong> rinnovo automatico quota (che sarà più bassa se siamo in più)</li>
+      </ol>
+    </div>
+
+    <div class="flex gap-3 justify-center flex-wrap mb-8">
+      <a href="https://wa.me/?text=Sono%20entrato%20nella%20cooperativa%20energetica.%20Pago%20la%20corrente%20al%20prezzo%20PUN%2C%20senza%20margine.%20Entra%20anche%20tu%3A%20"
+         class="inline-flex items-center gap-2 bg-[#141210] text-[#F5F1EA] px-5 py-3 rounded-full text-sm hover:bg-[#1F3A2E] transition">
+        Condividi su WhatsApp
+      </a>
+      <a href="/" class="inline-flex items-center gap-2 border border-[#141210] px-5 py-3 rounded-full text-sm hover:bg-[#141210] hover:text-[#F5F1EA] transition">
+        Torna al sito
+      </a>
+    </div>
+
+    <p class="text-sm text-[#141210]/60">
+      Non hai ricevuto email entro 10 minuti? Controlla spam o scrivi a
+      <a href="mailto:info@cooperativa-energetica.it" class="underline">info@cooperativa-energetica.it</a>.
+    </p>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001' : 'https://cooperativa-energetica-production.up.railway.app';
+  const fmtInt = n => new Intl.NumberFormat('it-IT').format(Math.round(n));
+  const fmtE = n => new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+  (async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/stats`);
+      const s = await r.json();
+      document.getElementById('soci').textContent = fmtInt(s.soci_attivi);
+      document.getElementById('quota').textContent = fmtE(s.quota_corrente);
+      document.getElementById('pun').textContent = fmtE(s.pun_corrente || 0);
+      const msg = s.soci_attivi < s.minimo_soci_apertura
+        ? `Mancano <strong>${s.minimo_soci_apertura - s.soci_attivi} soci</strong> per raggiungere la soglia minima operativa di ${s.minimo_soci_apertura}. La tua iscrizione ci avvicina. Quando saremo abbastanza, attiviamo la fornitura per tutti.`
+        : `Siamo operativi con ${s.soci_attivi} soci. La tua fornitura verrà attivata nei prossimi 30-60 giorni.`;
+      document.getElementById('messaggio').innerHTML = msg;
+    } catch {
+      document.getElementById('messaggio').textContent = 'Impossibile caricare lo stato live.';
+    }
+  })();
+</script>
+
+</body>
+</html>

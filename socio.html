@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La tua dashboard · Cooperativa Energetica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #F5F1EA; color: #141210; }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+  .number-tab { font-variant-numeric: tabular-nums; }
+  .stato-attivo { background: #6B9E4F; color: white; }
+  .stato-pending { background: #D4A84B; color: #141210; }
+  .stato-sospeso, .stato-uscito { background: #C84B31; color: white; }
+  .sparkline { stroke: #1F3A2E; stroke-width: 2; fill: none; }
+  .sparkline-fill { fill: rgba(31,58,46,0.1); }
+</style>
+</head>
+<body class="antialiased">
+
+<div class="max-w-6xl mx-auto px-6 py-12" id="app">
+  <div class="text-center py-24" id="loading">
+    <div class="serif text-2xl">Caricamento dashboard…</div>
+  </div>
+
+  <div class="hidden" id="dashboard">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-12 flex-wrap gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-[#141210]/60 mb-2">Dashboard socio</div>
+        <h1 class="serif text-4xl md:text-5xl font-bold">Ciao <span id="socio-nome">—</span>.</h1>
+      </div>
+      <div class="text-right">
+        <div class="text-xs uppercase tracking-widest text-[#141210]/60">Numero socio</div>
+        <div class="serif text-3xl number-tab">#<span id="numero-socio">—</span></div>
+        <div class="mt-2 inline-block text-xs uppercase tracking-widest px-3 py-1 rounded-full" id="stato-badge">—</div>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid md:grid-cols-4 gap-4 mb-10">
+      <div class="bg-white border border-[#141210]/10 rounded-lg p-6">
+        <div class="text-xs uppercase tracking-widest text-[#141210]/60 mb-2">Quota versata</div>
+        <div class="serif text-3xl number-tab">€<span id="quota-versata">—</span></div>
+        <div class="text-xs text-[#141210]/60 mt-1">Prossimo rinnovo: <span id="prossimo-rinnovo">—</span></div>
+      </div>
+      <div class="bg-white border border-[#141210]/10 rounded-lg p-6">
+        <div class="text-xs uppercase tracking-widest text-[#141210]/60 mb-2">Risparmio accumulato</div>
+        <div class="serif text-3xl number-tab text-[#1F3A2E]">€<span id="risparmio-totale">0</span></div>
+        <div class="text-xs text-[#141210]/60 mt-1">dall'adesione ad oggi</div>
+      </div>
+      <div class="bg-white border border-[#141210]/10 rounded-lg p-6">
+        <div class="text-xs uppercase tracking-widest text-[#141210]/60 mb-2">PUN oggi</div>
+        <div class="serif text-3xl number-tab">€<span id="pun-corrente">—</span></div>
+        <div class="text-xs text-[#141210]/60 mt-1">per MWh · <span id="pun-data">—</span></div>
+      </div>
+      <div class="bg-[#1F3A2E] text-[#F5F1EA] rounded-lg p-6">
+        <div class="text-xs uppercase tracking-widest text-[#F5F1EA]/60 mb-2">Quota corrente</div>
+        <div class="serif text-3xl number-tab">€<span id="quota-corrente">—</span></div>
+        <div class="text-xs text-[#F5F1EA]/60 mt-1">per nuovi iscritti</div>
+      </div>
+    </div>
+
+    <!-- Fornitura + PUN chart -->
+    <div class="grid md:grid-cols-2 gap-6 mb-10">
+      <div class="bg-white border border-[#141210]/10 rounded-lg p-6">
+        <h2 class="serif text-xl mb-4">La tua fornitura</h2>
+        <dl class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-[#141210]/60">Indirizzo</dt>
+            <dd class="text-right max-w-[60%]" id="indirizzo">—</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-[#141210]/60">Codice POD</dt>
+            <dd class="font-mono text-right" id="pod">—</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-[#141210]/60">Email</dt>
+            <dd class="text-right" id="email">—</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-[#141210]/60">Data adesione</dt>
+            <dd class="text-right" id="data-adesione">—</dd>
+          </div>
+        </dl>
+      </div>
+      <div class="bg-white border border-[#141210]/10 rounded-lg p-6">
+        <h2 class="serif text-xl mb-4">PUN ultimi 30 giorni</h2>
+        <svg id="pun-chart" viewBox="0 0 300 120" class="w-full h-32"></svg>
+        <div class="flex justify-between text-xs text-[#141210]/60 mt-2">
+          <span>€/MWh</span>
+          <span id="pun-chart-label">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bollette -->
+    <div class="bg-white border border-[#141210]/10 rounded-lg p-6 mb-10">
+      <h2 class="serif text-xl mb-6">Le tue bollette</h2>
+      <div id="bollette-container">
+        <p class="text-sm text-[#141210]/60 italic">Nessuna bolletta disponibile. Ne riceverai una ogni mese dopo l'attivazione della fornitura.</p>
+      </div>
+    </div>
+
+    <!-- Documenti -->
+    <div class="bg-white border border-[#141210]/10 rounded-lg p-6 mb-10">
+      <h2 class="serif text-xl mb-4">Documenti cooperativa</h2>
+      <div class="grid md:grid-cols-2 gap-3 text-sm">
+        <a href="#" class="flex items-center justify-between p-3 border border-[#141210]/10 rounded hover:bg-[#F5F1EA] transition">
+          <span>Statuto cooperativa</span>
+          <span class="text-[#141210]/40">[placeholder]</span>
+        </a>
+        <a href="#" class="flex items-center justify-between p-3 border border-[#141210]/10 rounded hover:bg-[#F5F1EA] transition">
+          <span>Ultimo bilancio annuale</span>
+          <span class="text-[#141210]/40">[placeholder]</span>
+        </a>
+        <a href="#" class="flex items-center justify-between p-3 border border-[#141210]/10 rounded hover:bg-[#F5F1EA] transition">
+          <span>Verbale ultima assemblea</span>
+          <span class="text-[#141210]/40">[placeholder]</span>
+        </a>
+        <a href="#" class="flex items-center justify-between p-3 border border-[#141210]/10 rounded hover:bg-[#F5F1EA] transition">
+          <span>Codice etico</span>
+          <span class="text-[#141210]/40">[placeholder]</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Uscita -->
+    <div class="bg-[#C84B31]/5 border border-[#C84B31]/30 rounded-lg p-6 mb-10">
+      <h2 class="serif text-xl mb-2">Esci dalla cooperativa</h2>
+      <p class="text-sm text-[#141210]/70 mb-4">
+        Puoi uscire in qualsiasi momento. L'abbonamento viene annullato a fine periodo corrente e la quota residua rimborsata pro-quota.
+      </p>
+      <button onclick="confermaUscita()" class="text-[#C84B31] border border-[#C84B31] px-4 py-2 rounded hover:bg-[#C84B31] hover:text-white transition text-sm">
+        Richiedi uscita
+      </button>
+    </div>
+
+    <div class="text-center">
+      <a href="/" class="text-sm text-[#141210]/60 hover:text-[#141210] underline">← Torna al sito</a>
+    </div>
+  </div>
+
+  <div class="hidden" id="errore">
+    <div class="text-center py-24">
+      <h1 class="serif text-3xl mb-4">Link non valido</h1>
+      <p class="text-[#141210]/70 mb-6">Il link che hai usato non è riconosciuto o è scaduto.</p>
+      <a href="/" class="text-[#1F3A2E] underline">Torna al sito</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001' : 'https://cooperativa-energetica-production.up.railway.app';
+  const token = new URLSearchParams(location.search).get('t');
+  const fmtInt = n => new Intl.NumberFormat('it-IT').format(Math.round(n));
+  const fmtE = n => n == null ? '—' : new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const fmtData = iso => iso ? new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+  const mesi = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+
+  window.confermaUscita = async () => {
+    if (!confirm('Confermi l\'uscita dalla cooperativa? L\'abbonamento verrà annullato a fine periodo corrente.')) return;
+    try {
+      const r = await fetch(`${API_BASE}/api/socio/${token}/esci`, { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      alert(data.message || 'Richiesta inviata.');
+      location.reload();
+    } catch (e) {
+      alert('Errore: ' + e.message);
+    }
+  };
+
+  function drawSparkline(data) {
+    const svg = document.getElementById('pun-chart');
+    if (!data || data.length === 0) { svg.innerHTML = '<text x="150" y="60" text-anchor="middle" fill="#999">Nessun dato</text>'; return; }
+    const values = data.map(d => Number(d.valore_euro_mwh));
+    const min = Math.min(...values), max = Math.max(...values);
+    const range = max - min || 1;
+    const W = 300, H = 120, pad = 10;
+    const pts = values.map((v, i) => {
+      const x = pad + (i / (values.length - 1)) * (W - 2*pad);
+      const y = H - pad - ((v - min) / range) * (H - 2*pad);
+      return [x, y];
+    });
+    const pathLine = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const pathFill = pathLine + ` L${W-pad},${H-pad} L${pad},${H-pad} Z`;
+    svg.innerHTML = `
+      <path d="${pathFill}" class="sparkline-fill"/>
+      <path d="${pathLine}" class="sparkline"/>
+    `;
+    document.getElementById('pun-chart-label').textContent = `min €${fmtE(min)} · max €${fmtE(max)}`;
+  }
+
+  (async () => {
+    if (!token) { document.getElementById('loading').remove(); document.getElementById('errore').classList.remove('hidden'); return; }
+    try {
+      const [res, punRes] = await Promise.all([
+        fetch(`${API_BASE}/api/socio/${token}`),
+        fetch(`${API_BASE}/api/pun`),
+      ]);
+      if (!res.ok) throw new Error('not found');
+      const d = await res.json();
+      const pun = await punRes.json();
+      const { socio, bollette, totaleRisparmio, quota_corrente, pun_corrente, pun_data } = d;
+
+      document.getElementById('socio-nome').textContent = socio.nome;
+      document.getElementById('numero-socio').textContent = socio.numero_socio;
+
+      const badge = document.getElementById('stato-badge');
+      badge.textContent = socio.stato;
+      badge.className = 'mt-2 inline-block text-xs uppercase tracking-widest px-3 py-1 rounded-full stato-' + socio.stato;
+
+      document.getElementById('quota-versata').textContent = fmtE(socio.quota_pagata || 0);
+      document.getElementById('prossimo-rinnovo').textContent = fmtData(socio.prossimo_rinnovo);
+      document.getElementById('risparmio-totale').textContent = fmtInt(totaleRisparmio);
+      document.getElementById('pun-corrente').textContent = fmtE(pun_corrente || pun.corrente);
+      document.getElementById('pun-data').textContent = fmtData(pun_data || pun.data);
+      document.getElementById('quota-corrente').textContent = fmtE(quota_corrente);
+      document.getElementById('indirizzo').textContent = socio.indirizzo_fornitura;
+      document.getElementById('pod').textContent = socio.pod || '—';
+      document.getElementById('email').textContent = socio.email;
+      document.getElementById('data-adesione').textContent = fmtData(socio.data_adesione);
+
+      drawSparkline(pun.ultimi30 || []);
+
+      if (bollette.length > 0) {
+        const container = document.getElementById('bollette-container');
+        container.innerHTML = `
+          <table class="w-full text-sm">
+            <thead class="text-left text-xs uppercase tracking-widest text-[#141210]/60 border-b border-[#141210]/10">
+              <tr><th class="py-2">Periodo</th><th>kWh</th><th>Pagato</th><th>Mercato</th><th class="text-right">Risparmio</th></tr>
+            </thead>
+            <tbody>
+              ${bollette.map(b => `
+                <tr class="border-b border-[#141210]/5">
+                  <td class="py-3">${mesi[b.mese - 1]} ${b.anno}</td>
+                  <td class="number-tab">${fmtE(b.kwh_consumati)}</td>
+                  <td class="number-tab">€${fmtE(b.importo_pagato)}</td>
+                  <td class="number-tab text-[#141210]/60">€${fmtE(b.importo_mercato_libero)}</td>
+                  <td class="number-tab text-right text-[#1F3A2E] font-semibold">€${fmtE(b.risparmio_stimato || 0)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>`;
+      }
+
+      document.getElementById('loading').remove();
+      document.getElementById('dashboard').classList.remove('hidden');
+    } catch (err) {
+      document.getElementById('loading').remove();
+      document.getElementById('errore').classList.remove('hidden');
+    }
+  })();
+</script>
+</body>
+</html>

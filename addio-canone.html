@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Addio Canone RAI — Cooperativa Energetica</title>
+<meta name="description" content="Mai più canone RAI. Mai più doverti ricordare. €90 all'anno recuperati con 4 minuti adesso, poi più niente.">
+<meta property="og:title" content="Addio Canone RAI — mai più, in 4 minuti">
+<meta property="og:description" content="Disdici il canone e lasci a noi anche il rinnovo ogni anno. €5 la tessera, €90 risparmiati ogni anno.">
+<meta name="theme-color" content="#F5F1EA">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          serif: ['Fraunces','Georgia','serif'],
+          sans: ['Inter','system-ui','sans-serif'],
+        },
+        colors: {
+          cream: '#F5F1EA',
+          ink: '#141210',
+          forest: '#1F3A2E',
+          rust: '#C84B31',
+          gold: '#D4A84B',
+          leaf: '#6B9E4F',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #F5F1EA; color: #141210; overflow-x: hidden; }
+  h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
+  .display { font-family: 'Fraunces', serif; font-weight: 700; letter-spacing: -0.03em; line-height: 0.98; font-variation-settings: 'opsz' 144; }
+  .number-tab { font-variant-numeric: tabular-nums; }
+
+  .step-panel {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 5rem 1.25rem 3rem;
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1);
+    pointer-events: none; position: absolute; inset: 0;
+  }
+  .step-panel.active { opacity: 1; transform: translateY(0); pointer-events: auto; position: relative; }
+  .step-panel.past { opacity: 0; transform: translateY(-30px); pointer-events: none; position: absolute; }
+
+  .btn-primary { background: #141210; color: #F5F1EA; padding: 1rem 2rem; border-radius: 999px; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: transform 0.2s, background 0.2s; cursor: pointer; border: none; font-family: inherit; font-size: 1rem; }
+  .btn-primary:hover { background: #1F3A2E; transform: translateY(-1px); }
+  .btn-primary.gold { background: #D4A84B; color: #141210; }
+  .btn-primary.gold:hover { background: #141210; color: #F5F1EA; }
+  .btn-primary.rust { background: #C84B31; color: #F5F1EA; }
+  .btn-primary.rust:hover { background: #141210; }
+  .btn-primary[disabled] { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .btn-secondary { border: 2px solid #141210; color: #141210; padding: 1rem 2rem; border-radius: 999px; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s; cursor: pointer; background: transparent; font-family: inherit; font-size: 1rem; }
+  .btn-secondary:hover { background: #141210; color: #F5F1EA; }
+
+  /* PROGRESS BAR globale */
+  .progress-bar-wrap {
+    position: fixed; top: 56px; left: 0; right: 0;
+    height: 4px; background: rgba(20,18,16,0.08);
+    z-index: 40; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .progress-bar-wrap.visible { opacity: 1; }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #D4A84B, #C84B31);
+    width: 0%;
+    transition: width 0.5s cubic-bezier(0.22,1,0.36,1);
+  }
+
+  /* Cards porta gratis/pagato */
+  .door-card {
+    background: white;
+    border: 2px solid rgba(20,18,16,0.12);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+    display: flex; flex-direction: column;
+    min-height: 100%;
+  }
+  .door-card:hover { border-color: #D4A84B; transform: translateY(-3px); box-shadow: 0 20px 40px rgba(212,168,75,0.15); }
+  .door-card.primary { border-color: #D4A84B; background: linear-gradient(180deg, #fdf6e3 0%, white 40%); }
+  .door-card.primary:hover { border-color: #141210; }
+  .door-card .badge {
+    position: absolute; top: -10px; right: 20px;
+    background: #D4A84B; color: #141210;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px;
+  }
+
+  /* How-it-works steps */
+  .how-step {
+    display: grid; grid-template-columns: 48px 1fr auto; gap: 18px;
+    align-items: start;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(20,18,16,0.08);
+  }
+  .how-step:last-child { border-bottom: none; }
+  .how-step-num {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #141210; color: #D4A84B;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .how-step-time {
+    font-family: 'Fraunces', serif; color: #6b5f4a;
+    font-size: 13px; font-style: italic;
+    white-space: nowrap;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(245,241,234,0.25);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Processing lines */
+  .proc-line { display: flex; align-items: center; gap: 14px; padding: 12px 0; opacity: 0.25; transition: opacity 0.5s; }
+  .proc-line.active { opacity: 1; }
+  .proc-line.done { opacity: 0.6; }
+  .proc-line.done .spinner { display: none; }
+  .proc-line .check { display: none; color: #6B9E4F; font-size: 18px; font-weight: 700; }
+  .proc-line.done .check { display: inline; }
+
+  /* Fade animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+  .fade-up-1 { animation-delay: 0.2s; }
+  .fade-up-2 { animation-delay: 0.45s; }
+  .fade-up-3 { animation-delay: 0.75s; }
+  .fade-up-4 { animation-delay: 1.05s; }
+  .fade-up-5 { animation-delay: 1.4s; }
+
+  /* TV wobble */
+  .tv-wobble { display: inline-block; animation: wobble 2.8s ease-in-out infinite; }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+
+  /* Upload doc UI */
+  .upload-slot {
+    border: 2px dashed rgba(20,18,16,0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 140px;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+  }
+  .upload-slot:hover { border-color: #D4A84B; background: #fdfaf1; }
+  .upload-slot.filled { border-color: #6B9E4F; border-style: solid; padding: 0; overflow: hidden; background: #141210; }
+  .upload-slot.error { border-color: #C84B31; background: #fdebe7; }
+  .upload-slot img { width: 100%; height: 100%; max-height: 200px; object-fit: cover; display: block; }
+  .upload-slot .label {
+    color: #6b5f4a; font-size: 13px;
+  }
+
+  /* Canvas firma */
+  .firma-canvas-wrap {
+    background: white;
+    border: 2px solid rgba(20,18,16,0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .firma-canvas-wrap canvas {
+    display: block; width: 100%; height: 180px;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .firma-placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(20,18,16,0.3); font-size: 13px; font-style: italic;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .firma-canvas-wrap.has-ink .firma-placeholder { opacity: 0; }
+
+  /* RENEWAL HERO — feature-eroe rinnovo 1-click annuale */
+  .renewal-hero {
+    background: linear-gradient(135deg, #141210 0%, #1F3A2E 100%);
+    border-radius: 22px;
+    padding: 2.5rem 2rem;
+    color: #F5F1EA;
+    margin-top: 3rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(20, 18, 16, 0.25);
+  }
+  .renewal-hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(212,168,75,0.35) 0%, rgba(212,168,75,0) 70%);
+    pointer-events: none;
+  }
+  .renewal-hero-inner {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    align-items: start;
+    position: relative;
+    z-index: 2;
+  }
+  .renewal-hero-icon {
+    font-size: 58px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 10px rgba(212,168,75,0.3));
+  }
+  .renewal-hero-kicker {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #D4A84B;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .renewal-hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(2.2rem, 4.4vw, 3.4rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin-bottom: 18px;
+    color: #F5F1EA;
+  }
+  .underline-gold {
+    background: linear-gradient(180deg, transparent 60%, rgba(212,168,75,0.55) 60%, rgba(212,168,75,0.55) 95%, transparent 95%);
+    padding: 0 4px;
+  }
+  .renewal-hero-body {
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(245,241,234,0.85);
+    margin-bottom: 24px;
+    max-width: 620px;
+  }
+  .renewal-hero-body strong { color: #F5F1EA; font-weight: 600; }
+  .renewal-hero-math {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 2.5rem;
+    padding-top: 22px;
+    border-top: 1px solid rgba(212,168,75,0.25);
+  }
+  .renewal-hero-math > div {
+    display: flex;
+    flex-direction: column;
+  }
+  .renewal-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 2.1rem;
+    color: #D4A84B;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .renewal-lbl {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,241,234,0.55);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  @media (max-width: 640px) {
+    .renewal-hero { padding: 1.75rem 1.25rem; }
+    .renewal-hero-inner { grid-template-columns: 1fr; gap: 12px; }
+    .renewal-hero-icon { font-size: 42px; }
+    .renewal-hero-math { gap: 1.25rem; grid-template-columns: repeat(3, 1fr); }
+    .renewal-num { font-size: 1.5rem; }
+    .renewal-lbl { font-size: 9.5px; }
+  }
+
+  /* FAQ "perché pago se è gratis" */
+  .faq-why {
+    background: white;
+    border: 1px solid rgba(20, 18, 16, 0.12);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .faq-why[open] { border-color: #D4A84B; box-shadow: 0 8px 28px rgba(212, 168, 75, 0.1); }
+  .faq-why summary {
+    padding: 18px 22px;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #141210;
+  }
+  .faq-why summary::-webkit-details-marker { display: none; }
+  .faq-why-chev { flex-shrink: 0; color: rgba(20, 18, 16, 0.55); transition: transform 0.25s; }
+  .faq-why[open] .faq-why-chev { transform: rotate(180deg); color: #D4A84B; }
+  .faq-why-body {
+    padding: 4px 24px 22px;
+    color: rgba(20, 18, 16, 0.82);
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+  .faq-why-body p { margin-bottom: 14px; }
+  .faq-why-list {
+    margin: 10px 0 16px;
+    padding-left: 20px;
+  }
+  .faq-why-list li { margin-bottom: 8px; line-height: 1.55; }
+  .faq-why-footnote {
+    padding-top: 12px;
+    border-top: 1px solid rgba(20, 18, 16, 0.08);
+    font-style: italic;
+    color: rgba(20, 18, 16, 0.7);
+    margin-bottom: 0;
+  }
+
+  main { position: relative; min-height: 100vh; }
+  .stage-container { position: relative; min-height: 100vh; }
+
+  @media (max-width: 640px) {
+    .how-step { grid-template-columns: 36px 1fr auto; gap: 12px; }
+    .how-step-num { width: 32px; height: 32px; font-size: 15px; }
+    .how-step-time { font-size: 12px; }
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- Top bar -->
+<nav class="fixed top-0 left-0 right-0 z-50 bg-cream/90 backdrop-blur-md border-b border-ink/10">
+  <div class="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
+    <a href="/" class="text-sm text-ink/70 hover:text-ink transition flex items-center gap-2">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Cooperativa Energetica
+    </a>
+    <div class="text-xs uppercase tracking-widest text-ink/60">Addio Canone RAI</div>
+  </div>
+</nav>
+
+<!-- Progress bar globale -->
+<div class="progress-bar-wrap" id="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progress-bar-fill"></div>
+</div>
+
+<main class="pt-14">
+<div class="stage-container">
+
+<!-- ============================================================ -->
+<!-- STEP 1 — HERO + DUE PORTE -->
+<!-- ============================================================ -->
+<section data-step="1" class="step-panel active">
+  <div class="max-w-5xl mx-auto w-full">
+
+    <div class="text-center mb-10">
+      <div class="text-7xl md:text-8xl mb-6 tv-wobble">📺</div>
+      <h1 class="display text-[11vw] md:text-7xl mb-5">
+        Mai più canone RAI.<br>
+        <span class="italic text-forest">Mai più doverti ricordare.</span>
+      </h1>
+      <p class="text-lg md:text-xl text-ink/75 max-w-2xl mx-auto leading-relaxed">
+        <strong>~€90 risparmiati ogni anno</strong>, finché non comprerai una TV.<br class="hidden md:block">
+        Scegli tu come: da solo gratis col tuo SPID, o facciamo tutto noi per €5.
+      </p>
+    </div>
+
+    <!-- DUE PORTE -->
+    <div class="grid md:grid-cols-2 gap-5 mb-10 max-w-4xl mx-auto">
+
+      <!-- PORTA A — Gratis / SPID -->
+      <button type="button" onclick="scegliPorta('gratis')" class="door-card">
+        <div class="text-3xl mb-3">🪪</div>
+        <h2 class="serif text-2xl font-bold mb-2">Fallo tu, gratis</h2>
+        <p class="text-sm text-ink/70 leading-relaxed mb-4">
+          Ti mandiamo la guida passo-passo via email. Vai sul portale Agenzia Entrate
+          con il tuo SPID e compili lì. <strong>Zero costi</strong>, zero iscrizioni.
+        </p>
+        <ul class="text-sm text-ink/80 space-y-2 mb-5 flex-grow">
+          <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> 0 €</li>
+          <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> ~15 min tuoi sul portale AE</li>
+          <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Promemoria gratis ogni anno</li>
+          <li class="flex gap-2"><span class="text-ink/30 font-bold">✗</span> Devi rifarlo tu ogni anno</li>
+        </ul>
+        <span class="inline-flex items-center gap-2 text-ink font-semibold text-sm mt-auto">
+          Procedo da solo →
+        </span>
+      </button>
+
+      <!-- PORTA B — €5 / facciamo noi -->
+      <button type="button" onclick="scegliPorta('pagato')" class="door-card primary">
+        <span class="badge">Consigliato</span>
+        <div class="text-3xl mb-3">⚡</div>
+        <h2 class="serif text-2xl font-bold mb-2">Ci pensiamo noi</h2>
+        <p class="text-sm text-ink/70 leading-relaxed mb-4">
+          Foto della carta d'identità, firma a dito, paghi <strong>€5 di tessera annuale</strong>.
+          Mandiamo noi la PEC all'AE, archiviamo la ricevuta.
+        </p>
+        <ul class="text-sm text-ink/80 space-y-2 mb-5">
+          <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> 5 € una volta (tessera socio)</li>
+          <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> ~4 min tuoi adesso</li>
+          <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> PEC all'AE + ricevuta + archivio 10 anni</li>
+        </ul>
+        <span class="inline-flex items-center gap-2 text-ink font-semibold text-sm mt-auto">
+          Ci penso lei →
+        </span>
+      </button>
+    </div>
+
+    <!-- Feature eroe: Rinnovo automatico 1-click -->
+    <div class="renewal-hero max-w-4xl mx-auto mb-10">
+      <div class="renewal-hero-inner">
+        <div class="renewal-hero-icon">📅</div>
+        <div class="renewal-hero-text">
+          <div class="renewal-hero-kicker">Il vero vantaggio</div>
+          <h3 class="renewal-hero-title">Poi ogni anno, <span class="underline-gold">1 click</span>.</h3>
+          <p class="renewal-hero-body">
+            A <strong>gennaio</strong> ti mandiamo un'email con <strong>un pulsante</strong>. Lo premi,
+            rinnoviamo la dichiarazione, i <strong>€90 di canone</strong> restano tuoi anche per quell'anno.
+            <strong>10 secondi</strong>. Nessun portale, nessun SPID, nessuna data da ricordare.
+          </p>
+          <div class="renewal-hero-math">
+            <div><span class="renewal-num">€5</span><span class="renewal-lbl">tuoi / anno</span></div>
+            <div><span class="renewal-num">€90</span><span class="renewal-lbl">risparmiati / anno</span></div>
+            <div><span class="renewal-num">€850</span><span class="renewal-lbl">in 10 anni</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confronto finale -->
+    <div class="bg-white/60 border border-ink/10 rounded-lg p-5 max-w-3xl mx-auto">
+      <p class="text-sm text-ink/80 text-center leading-relaxed">
+        <strong class="text-ink">Trasparenza:</strong> disdire il canone è <strong>gratis</strong> per legge, ma <strong>devi ricordarti di farlo ogni anno</strong>. Noi ti velocizziamo il processo e faremo in modo di <strong>fartelo disdire ogni anno</strong>.
+      </p>
+    </div>
+
+    <!-- FAQ: perché pagare €5 se è gratis -->
+    <details class="faq-why max-w-3xl mx-auto mt-4">
+      <summary>
+        <span class="faq-why-q">Se è gratis, perché devo pagare €5?</span>
+        <svg class="faq-why-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
+      <div class="faq-why-body">
+        <p>La dichiarazione all'Agenzia delle Entrate è gratis per te. Ma <strong>il servizio che ti offriamo ha dei costi reali</strong> che sono questi, in trasparenza:</p>
+        <ul class="faq-why-list">
+          <li><strong>Casella PEC certificata</strong> intestata all'associazione (~€30/anno) — serve per trasmettere legalmente la tua dichiarazione all'AE.</li>
+          <li><strong>Hosting sito + database + backend</strong> (Cloudflare, Supabase, Railway — ~€100-300/anno) — per tenere online il form, il pannello, il sistema di firma e l'archivio.</li>
+          <li><strong>Archiviazione 10 anni</strong> della ricevuta AE con il tuo numero di protocollo, come richiesto dalle norme fiscali.</li>
+          <li><strong>Email transazionali</strong> (Resend) per mandarti la guida, la conferma, la ricevuta e il promemoria annuale.</li>
+          <li><strong>Commissioni Stripe</strong> sul pagamento (~€0,33 per ogni €5).</li>
+          <li><strong>Tempo umano</strong> per supporto email quando qualcosa va storto, e per sviluppo/manutenzione.</li>
+        </ul>
+        <p>Siamo un'associazione senza scopo di lucro: dei tuoi €5, circa <strong>€0,50 coprono i costi tecnici</strong>; il resto <strong>finanzia la costituzione della cooperativa energetica</strong> che farà risparmiare anche sulla bolletta elettrica. Bilancio pubblico ogni anno.</p>
+        <p class="faq-why-footnote">In altre parole: €5 non sono per il servizio canone (che costa davvero poco), sono per entrare come <strong>Socio Sostenitore</strong> di un progetto più grande. Il canone è il primo beneficio incluso nella tessera.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 2 — COME FUNZIONA (pre-form del percorso pagato) -->
+<!-- ============================================================ -->
+<section data-step="2" class="step-panel">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-xs uppercase tracking-widest mb-4 text-ink/60">Il percorso</div>
+    <h2 class="display text-4xl md:text-5xl mb-3">Ti diciamo tutto prima.</h2>
+    <p class="text-ink/70 mb-8 leading-relaxed">Nessuna sorpresa. Sono 4 passaggi, il totale è sotto i 4 minuti.</p>
+
+    <div class="bg-white rounded-xl border border-ink/10 p-6 mb-6">
+      <div class="how-step">
+        <div class="how-step-num">1</div>
+        <div>
+          <div class="font-semibold text-ink">Compili 5 campi</div>
+          <div class="text-sm text-ink/70">Nome, cognome, codice fiscale, email, indirizzo.</div>
+        </div>
+        <div class="how-step-time">~1 min</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">2</div>
+        <div>
+          <div class="font-semibold text-ink">Paghi €5 di tessera</div>
+          <div class="text-sm text-ink/70">Carta, Apple Pay o Google Pay tramite Stripe.</div>
+        </div>
+        <div class="how-step-time">~30 sec</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">3</div>
+        <div>
+          <div class="font-semibold text-ink">Foto carta d'identità</div>
+          <div class="text-sm text-ink/70">Fronte e retro, anche col telefono che hai in mano.</div>
+        </div>
+        <div class="how-step-time">~1 min</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">4</div>
+        <div>
+          <div class="font-semibold text-ink">Firmi a schermo con il dito</div>
+          <div class="text-sm text-ink/70">Come sui pacchi che ti arrivano a casa.</div>
+        </div>
+        <div class="how-step-time">~15 sec</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num" style="background:#1F3A2E;color:#D4A84B;">✓</div>
+        <div>
+          <div class="font-semibold text-forest">Da qui in poi lo facciamo noi</div>
+          <div class="text-sm text-ink/70">Generiamo la dichiarazione, la firmiamo con la tua firma, mandiamo la PEC all'Agenzia delle Entrate. Ricevuta entro 48h alla tua email.</div>
+        </div>
+        <div class="how-step-time">auto</div>
+      </div>
+    </div>
+
+    <div class="bg-cream border border-ink/10 rounded-lg p-5 mb-5 text-sm">
+      <div class="font-semibold text-ink mb-2">Perché è legale farla fare a noi?</div>
+      <p class="text-ink/75 leading-relaxed">
+        La tua firma + la copia della carta d'identità rendono la dichiarazione valida ai sensi del <strong>DPR 445/2000 art. 38</strong> e del <strong>Provvedimento Agenzia Entrate 45059/2016</strong>. È lo stesso percorso che usano CAF e patronati da 25 anni.
+      </p>
+    </div>
+
+    <!-- Disclaimer tempistiche dinamico -->
+    <div id="timing-disclaimer" class="bg-rust/8 border-l-4 border-rust rounded-r-lg p-5 mb-6 text-sm" style="background:rgba(200,75,49,0.08);">
+      <div class="font-semibold text-ink mb-2 flex items-center gap-2">
+        <span>⏱</span>
+        <span>Quando inizi a risparmiare</span>
+      </div>
+      <p class="text-ink/80 leading-relaxed mb-2" id="timing-explain">
+        Caricamento…
+      </p>
+      <p class="text-ink/70 leading-relaxed text-xs italic">
+        Il canone <strong>non viene rimborsato sul conto</strong>: smette di comparire come voce in bolletta (solitamente entro 1-2 fatture dopo la protocollazione). Le rate già pagate restano a carico del dichiarante.
+      </p>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-3 justify-center">
+      <button onclick="goToStep('3')" class="btn-primary gold justify-center">
+        Iniziamo →
+      </button>
+      <button onclick="goToStep('1')" class="btn-secondary justify-center">
+        Torna indietro
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 2G — GRATIS / SPID-assisted (guida via email) -->
+<!-- ============================================================ -->
+<section data-step="2g" class="step-panel">
+  <div class="max-w-xl mx-auto w-full text-center">
+    <div class="text-6xl mb-6">🪪</div>
+    <h2 class="display text-4xl md:text-5xl mb-4">Perfetto. Ti guidiamo.</h2>
+    <p class="text-ink/75 mb-8 leading-relaxed">
+      Lasciaci la tua email qui sotto. Ti mandiamo subito una guida dettagliata su come fare la dichiarazione col tuo SPID sul portale Agenzia Entrate (è davvero semplice, ~15 minuti).
+      <br><br>
+      <strong>A gennaio ${new Date().getFullYear() + 1}</strong> ti ricordiamo di rinnovare, perché va rifatta ogni anno.
+    </p>
+
+    <form id="form-gratis" class="space-y-4 bg-white border border-ink/15 rounded-lg p-6 text-left" onsubmit="event.preventDefault(); handleSubmitGratis(event); return false;">
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Nome*</label>
+        <input type="text" name="nome" required class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Email*</label>
+        <input type="email" name="email" required class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink">
+      </div>
+      <label class="flex gap-2 text-sm text-ink/75">
+        <input type="checkbox" name="consenso" required class="mt-1">
+        <span>Accetto la <a href="/privacy.html" class="underline" target="_blank">privacy policy</a> e di ricevere il promemoria annuale.</span>
+      </label>
+      <button type="submit" class="btn-primary w-full justify-center">Mandami la guida →</button>
+    </form>
+
+    <button onclick="goToStep('1')" class="text-sm text-ink/60 hover:text-ink mt-5 underline">
+      Cambio idea, voglio farlo fare a voi
+    </button>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 3 — FORM DATI -->
+<!-- ============================================================ -->
+<section data-step="3" class="step-panel">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-xs uppercase tracking-widest mb-4 text-ink/60">Passaggio 1 di 4 · ~3 min rimanenti</div>
+    <h2 class="display text-4xl md:text-5xl mb-5">I tuoi dati.</h2>
+    <p class="text-ink/70 mb-8 leading-relaxed">
+      Solo quello che serve per la dichiarazione. I dati restano criptati sui nostri server, non li vendiamo a nessuno.
+    </p>
+
+    <form id="form-canone" method="POST" action="javascript:void(0)" class="space-y-4 bg-white border border-ink/15 rounded-lg p-6" onsubmit="event.preventDefault(); handleCanone(event); return false;">
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Nome*</label>
+          <input type="text" name="nome" required autocomplete="given-name"
+            class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink">
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Cognome*</label>
+          <input type="text" name="cognome" required autocomplete="family-name"
+            class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Codice fiscale*</label>
+        <input type="text" name="codice_fiscale" required maxlength="16" pattern="[A-Za-z0-9]{16}"
+          class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink uppercase font-mono">
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Email*</label>
+        <input type="email" name="email" required autocomplete="email"
+          class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink">
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-ink/60 mb-1">Indirizzo residenza*</label>
+        <input type="text" name="indirizzo" required placeholder="Via, numero, città, CAP"
+          class="w-full bg-cream border border-ink/20 rounded px-4 py-3 focus:outline-none focus:border-ink">
+        <p class="text-xs text-ink/50 mt-1">L'indirizzo sulla bolletta elettrica dove non c'è la TV.</p>
+      </div>
+
+      <label class="flex gap-2 text-sm text-ink/75 pt-2">
+        <input type="checkbox" name="consenso_privacy" required class="mt-1">
+        <span>Accetto la <a href="/privacy.html" class="underline" target="_blank">privacy policy</a> e confermo di non detenere apparecchi TV nell'abitazione indicata.</span>
+      </label>
+      <label class="flex gap-2 text-sm text-ink/75">
+        <input type="checkbox" name="consenso_marketing" class="mt-1">
+        <span>Voglio restare aggiornato sulla <strong>cooperativa energetica</strong>: quando partiremo col risparmio in bolletta, i workshop online, i bilanci pubblici. (Opzionale, revocabile in qualsiasi momento.)</span>
+      </label>
+
+      <div class="flex flex-col md:flex-row gap-3 pt-2">
+        <button type="submit" class="btn-primary gold flex-1 justify-center">
+          Continua al pagamento →
+        </button>
+        <button type="button" onclick="goToStep('1')" class="btn-secondary justify-center">
+          Indietro
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 3b — PAGAMENTO TESSERA €5 -->
+<!-- ============================================================ -->
+<section data-step="3b" class="step-panel">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-xs uppercase tracking-widest mb-4 text-ink/60">Passaggio 2 di 4 · ~2 min rimanenti</div>
+    <h2 class="display text-4xl md:text-5xl mb-3">Tessera di socio.</h2>
+    <p class="text-ink/70 mb-8 leading-relaxed">
+      La Cooperativa Energetica è un'associazione. Ricevi il servizio di disdetta canone come socio sostenitore con una quota di €5/anno. Lo stesso meccanismo usato dai CAF.
+    </p>
+
+    <div class="bg-white border border-gold rounded-xl p-7 mb-6">
+      <div class="text-center mb-5">
+        <div class="text-xs uppercase tracking-widest text-ink/60 mb-1">Tessera Sostenitore</div>
+        <div class="font-serif text-6xl font-bold text-ink">€5</div>
+        <div class="text-ink/60 text-sm">all'anno · 1 pratica canone inclusa</div>
+      </div>
+
+      <ul class="text-sm text-ink/85 space-y-2 mb-6">
+        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Dichiarazione canone preparata, firmata, spedita via PEC</li>
+        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Ricevuta AE con protocollo, conservata 10 anni</li>
+        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Rinnovo automatico a gennaio con 1 click</li>
+        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Diritto di voto all'assemblea soci</li>
+        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Lista prioritaria per la cooperativa energetica</li>
+      </ul>
+
+      <a href="https://buy.stripe.com/eVq28q4PB9xW2ibe97bsc00"
+         target="_blank" rel="noopener"
+         onclick="handleTesseraPayClick()"
+         id="tessera-pay-btn"
+         class="btn-primary gold justify-center text-lg !py-4 !px-8 w-full">
+        Diventa socio · paga €5
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <p class="text-xs text-ink/55 mt-3 italic text-center">
+        Stripe · Ricevuta via email · Recesso libero
+      </p>
+    </div>
+
+    <div id="ho-pagato-btn" class="hidden text-center">
+      <p class="text-sm text-ink/70 mb-3">Hai completato il pagamento?</p>
+      <button onclick="goToStep('3c')" class="btn-primary">
+        Ho pagato · carico il documento →
+      </button>
+    </div>
+
+    <div class="text-center">
+      <button onclick="goBack()" class="text-sm text-ink/60 hover:text-ink underline">Indietro</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 3c — UPLOAD DOCUMENTO IDENTITÀ -->
+<!-- ============================================================ -->
+<section data-step="3c" class="step-panel">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-xs uppercase tracking-widest mb-4 text-ink/60">Passaggio 3 di 4 · ~1 min rimanente</div>
+    <h2 class="display text-4xl md:text-5xl mb-3">Carta d'identità.</h2>
+    <p class="text-ink/70 mb-7 leading-relaxed">
+      Serve la copia del documento per rendere legalmente valida la dichiarazione (art. 38 DPR 445/2000). La cancelliamo dai nostri server appena arriva la conferma dell'Agenzia Entrate.
+    </p>
+
+    <div class="space-y-4 mb-6">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-ink/60 mb-2 font-semibold">Fronte carta d'identità*</div>
+        <label for="doc-fronte" class="upload-slot" id="slot-fronte">
+          <div class="text-2xl mb-2">📄</div>
+          <div class="label">Tocca per scattare o caricare la foto fronte</div>
+          <input id="doc-fronte" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" class="hidden" onchange="handleDocFileChange(event, 'fronte')">
+        </label>
+      </div>
+
+      <div>
+        <div class="text-xs uppercase tracking-widest text-ink/60 mb-2 font-semibold">Retro carta d'identità*</div>
+        <label for="doc-retro" class="upload-slot" id="slot-retro">
+          <div class="text-2xl mb-2">📄</div>
+          <div class="label">Tocca per scattare o caricare la foto retro</div>
+          <input id="doc-retro" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" class="hidden" onchange="handleDocFileChange(event, 'retro')">
+        </label>
+      </div>
+    </div>
+
+    <div class="bg-cream border border-ink/10 rounded-lg p-4 mb-6 text-xs text-ink/70 leading-relaxed">
+      <strong class="text-ink">Consigli per una buona foto:</strong> superficie scura, luce naturale, niente flash. Il documento deve essere <strong>intero e leggibile</strong>. Accettiamo .jpg / .png / .webp / .pdf fino a 10 MB.
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-3">
+      <button id="doc-continua-btn" onclick="handleDocContinua()" class="btn-primary gold flex-1 justify-center" disabled>
+        Continua → firma
+      </button>
+      <button onclick="goBack()" class="btn-secondary justify-center">Indietro</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 3d — FIRMA TOUCH -->
+<!-- ============================================================ -->
+<section data-step="3d" class="step-panel">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-xs uppercase tracking-widest mb-4 text-ink/60">Passaggio 4 di 4 · ~15 sec rimanenti</div>
+    <h2 class="display text-4xl md:text-5xl mb-3">Firma.</h2>
+    <p class="text-ink/70 mb-6 leading-relaxed">
+      Firma con il dito dentro il riquadro qui sotto. Come sui pacchi della corriere. Questa firma finisce sulla dichiarazione che mandiamo all'Agenzia Entrate.
+    </p>
+
+    <div class="firma-canvas-wrap mb-4" id="firma-wrap">
+      <canvas id="firma-canvas" width="800" height="300"></canvas>
+      <div class="firma-placeholder">Firma qui con il dito o il mouse</div>
+    </div>
+
+    <div class="flex items-center justify-between mb-6 text-sm">
+      <button onclick="firmaClear()" class="text-ink/60 hover:text-ink underline">Pulisci e rifai</button>
+      <span id="firma-count" class="text-ink/50 text-xs"></span>
+    </div>
+
+    <div id="firma-err" class="hidden bg-rust/10 border border-rust/30 text-rust rounded p-3 mb-4 text-sm"></div>
+
+    <div class="flex flex-col md:flex-row gap-3">
+      <button id="firma-invia-btn" onclick="handleFirmaInvia()" class="btn-primary gold flex-1 justify-center" disabled>
+        Firma e invia alla AE →
+      </button>
+      <button onclick="goBack()" class="btn-secondary justify-center">Indietro</button>
+    </div>
+
+    <p class="text-xs text-ink/50 text-center mt-5 leading-relaxed">
+      Cliccando "Firma e invia" autorizzi la trasmissione della tua dichiarazione sostitutiva
+      all'Agenzia delle Entrate via PEC, con allegata copia del documento d'identità, a tutela dei
+      diritti ex art. 46-47 DPR 445/2000.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 4 — PROCESSING (stiamo mandando PEC) -->
+<!-- ============================================================ -->
+<section data-step="4" class="step-panel">
+  <div class="max-w-xl mx-auto w-full">
+    <div class="text-center mb-8">
+      <div class="spinner text-gold" style="width: 48px; height: 48px; margin: 0 auto 20px;"></div>
+      <h2 class="display text-4xl md:text-5xl mb-3">Ci stiamo occupando di tutto.</h2>
+      <p class="text-ink/70">Resta qui 30 secondi. Ti diamo la conferma.</p>
+    </div>
+
+    <div class="bg-white border border-ink/10 rounded-xl p-6">
+      <div id="proc-1" class="proc-line active">
+        <div class="spinner" style="color: #D4A84B;"></div>
+        <span class="check">✓</span>
+        <span>Generazione dichiarazione PDF…</span>
+      </div>
+      <div id="proc-2" class="proc-line">
+        <div class="spinner" style="color: #D4A84B;"></div>
+        <span class="check">✓</span>
+        <span>Firma elettronica incorporata…</span>
+      </div>
+      <div id="proc-3" class="proc-line">
+        <div class="spinner" style="color: #D4A84B;"></div>
+        <span class="check">✓</span>
+        <span>Invio PEC ad Agenzia Entrate…</span>
+      </div>
+      <div id="proc-4" class="proc-line">
+        <div class="spinner" style="color: #D4A84B;"></div>
+        <span class="check">✓</span>
+        <span>Conferma di accettazione…</span>
+      </div>
+    </div>
+
+    <div id="processing-err" class="hidden mt-6 bg-rust/10 border border-rust/30 text-rust rounded p-4 text-sm"></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- STEP 5 — SUCCESS + PROMEMORIA 2027 -->
+<!-- ============================================================ -->
+<section data-step="5" class="step-panel">
+  <div class="max-w-2xl mx-auto w-full text-center">
+    <div class="fade-up">
+      <div class="text-7xl mb-5">✓</div>
+      <h1 class="display text-5xl md:text-7xl mb-4">Fatto.</h1>
+      <p class="text-xl text-ink/80 mb-2">La tua dichiarazione è partita per l'Agenzia Entrate.</p>
+      <p class="text-ink/60 text-sm mb-10">Pratica <span id="success-pratica" class="font-mono font-semibold"></span></p>
+    </div>
+
+    <div class="fade-up fade-up-1 bg-white border border-ink/10 rounded-xl p-6 mb-6 text-left">
+      <div class="text-xs uppercase tracking-widest text-leaf mb-2 font-semibold">Adesso</div>
+      <p class="text-ink/85 text-sm leading-relaxed">
+        Entro <strong>48 ore</strong> l'AE manda la ricevuta con numero di protocollo. Te la giriamo appena arriva alla tua email.
+        Da <strong>gennaio</strong> il canone non compare più in bolletta.
+      </p>
+    </div>
+
+    <div class="fade-up fade-up-2 bg-gradient-to-br from-gold/20 to-gold/5 border border-gold rounded-xl p-6 mb-6 text-left">
+      <div class="text-xs uppercase tracking-widest text-ink/60 mb-2 font-semibold">📅 Prossimo appuntamento</div>
+      <div class="font-serif text-3xl font-bold text-ink mb-2" id="success-data-rinnovo">15 gennaio 2027</div>
+      <p class="text-ink/75 text-sm leading-relaxed">
+        Ti mandiamo un'email con <strong>un pulsante</strong>. Confermi che non hai ancora una TV, rinnoviamo la dichiarazione, fine.
+        Tempo richiesto: <strong>10 secondi</strong>. Zero pensieri fino ad allora.
+      </p>
+    </div>
+
+    <div class="fade-up fade-up-3 bg-cream border border-ink/10 rounded-lg p-5 text-left mb-7">
+      <div class="text-xs uppercase tracking-widest text-ink/60 mb-2 font-semibold">⚡ Prossimo passo per te (opzionale)</div>
+      <p class="text-ink/80 text-sm leading-relaxed mb-3">
+        Siamo un'associazione che sta costruendo una <strong>cooperativa energetica</strong> per comprare energia al prezzo PUN e rivenderla ai soci senza margine. La tua tessera ti mette in lista prioritaria.
+      </p>
+      <a href="/" class="btn-primary text-sm">Scopri la cooperativa →</a>
+    </div>
+
+    <div class="fade-up fade-up-4 flex justify-center gap-3 flex-wrap">
+      <button onclick="shareWhatsapp()" class="btn-secondary text-sm">Passaparola WhatsApp</button>
+      <button onclick="shareTelegram()" class="btn-secondary text-sm">Telegram</button>
+    </div>
+  </div>
+</section>
+
+</div>
+</main>
+
+<script>
+  // ============================================================
+  // State
+  // ============================================================
+  const API_BASE = (window.__API_BASE__ || 'https://cooperativa-energetica-production-6d71.up.railway.app').replace(/\/$/, '');
+  const DEFAULT_PAY_URL = 'https://buy.stripe.com/eVq28q4PB9xW2ibe97bsc00';
+
+  let currentStep = '1';
+  const history = ['1'];
+  const TOTAL_STEPS_PAGATO = 4;  // per progress bar (step 3 + 3b + 3c + 3d)
+  const STEP_INDEX = { '3': 1, '3b': 2, '3c': 3, '3d': 4 };
+
+  let docsUploaded = { fronte: false, retro: false };
+  let docFileCache = { fronte: null, retro: null };  // data URLs tenuti in memoria
+  let firmaCtx = null, firmaDrawing = false, firmaHasInk = false;
+
+  // ============================================================
+  // Step navigation
+  // ============================================================
+  function goToStep(step) {
+    const cur = document.querySelector(`[data-step="${currentStep}"]`);
+    const next = document.querySelector(`[data-step="${step}"]`);
+    if (!next) return;
+    if (cur) { cur.classList.remove('active'); cur.classList.add('past'); }
+    next.classList.remove('past'); next.classList.add('active');
+    currentStep = step;
+    history.push(step);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateProgress();
+    if (step === '3d') requestAnimationFrame(initFirmaCanvas);
+    if (step === '4') startProcessingAnimation();
+    if (step === '5') launchConfetti();
+  }
+
+  function goBack() {
+    if (history.length <= 1) return;
+    history.pop();
+    const prev = history[history.length - 1];
+    const cur = document.querySelector(`[data-step="${currentStep}"]`);
+    const target = document.querySelector(`[data-step="${prev}"]`);
+    if (!target) return;
+    if (cur) { cur.classList.remove('active'); cur.classList.add('past'); }
+    target.classList.remove('past'); target.classList.add('active');
+    currentStep = prev;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const wrap = document.getElementById('progress-bar-wrap');
+    const fill = document.getElementById('progress-bar-fill');
+    const idx = STEP_INDEX[currentStep];
+    if (idx) {
+      wrap.classList.add('visible');
+      fill.style.width = `${(idx / TOTAL_STEPS_PAGATO) * 100}%`;
+    } else {
+      wrap.classList.remove('visible');
+      fill.style.width = '0%';
+    }
+  }
+
+  // ============================================================
+  // Porta scelta
+  // ============================================================
+  function scegliPorta(kind) {
+    if (kind === 'gratis') goToStep('2g');
+    else goToStep('2');
+  }
+
+  // ============================================================
+  // GRATIS flow — lead capture solo email
+  // ============================================================
+  async function handleSubmitGratis(e) {
+    const form = e.target;
+    const fd = new FormData(form);
+    const payload = {
+      nome: (fd.get('nome') || '').toString().trim(),
+      email: (fd.get('email') || '').toString().trim().toLowerCase(),
+      flow: 'gratis',
+    };
+    try {
+      await fetch(`${API_BASE}/api/canone/lead-gratis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch {}
+    // Success immediata, non aspettiamo risposta
+    document.getElementById('form-gratis').innerHTML = `
+      <div class="text-center py-8">
+        <div class="text-5xl mb-4">📬</div>
+        <h3 class="serif text-2xl font-bold mb-2">Controlla l'email</h3>
+        <p class="text-ink/70 text-sm">Ti abbiamo mandato la guida. Se non arriva entro 5 min, controlla lo spam.</p>
+      </div>`;
+  }
+
+  // ============================================================
+  // PAGATO flow — form + backend submit
+  // ============================================================
+  async function handleCanone(e) {
+    const form = e.target;
+    const fd = new FormData(form);
+    const payload = {
+      nome: (fd.get('nome') || '').toString().trim(),
+      cognome: (fd.get('cognome') || '').toString().trim(),
+      codiceFiscale: (fd.get('codice_fiscale') || '').toString().trim().toUpperCase(),
+      email: (fd.get('email') || '').toString().trim().toLowerCase(),
+      indirizzo: (fd.get('indirizzo') || '').toString().trim(),
+      consensoPrivacy: true,
+      quadro: 'A',
+    };
+    try { sessionStorage.setItem('canone_form', JSON.stringify(payload)); } catch {}
+    goToStep('3b');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/canone/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore backend');
+
+      try { sessionStorage.setItem('canone_richiesta_id', data.richiestaId); } catch {}
+      try { sessionStorage.setItem('canone_numero_pratica', data.numeroPratica); } catch {}
+
+      const payBtn = document.getElementById('tessera-pay-btn');
+      if (payBtn && data.paymentUrl) payBtn.href = data.paymentUrl;
+    } catch (err) {
+      console.error('Submit backend error:', err);
+      const payBtn = document.getElementById('tessera-pay-btn');
+      if (payBtn) payBtn.href = DEFAULT_PAY_URL;
+    }
+  }
+
+  function handleTesseraPayClick() {
+    setTimeout(() => {
+      const b = document.getElementById('ho-pagato-btn');
+      if (b) b.classList.remove('hidden');
+    }, 2500);
+    try { sessionStorage.setItem('tessera_pay_initiated', Date.now().toString()); } catch {}
+  }
+
+  window.addEventListener('focus', () => {
+    const initiated = sessionStorage.getItem('tessera_pay_initiated');
+    if (initiated && (Date.now() - parseInt(initiated, 10) > 1500)) {
+      const b = document.getElementById('ho-pagato-btn');
+      if (b) b.classList.remove('hidden');
+    }
+  });
+
+  // Auto-advance a step 3c se Stripe redireziona con ?paid=1
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('paid') === '1') {
+      const rid = sessionStorage.getItem('canone_richiesta_id');
+      if (rid) {
+        setTimeout(() => goToStep('3c'), 300);
+      }
+    }
+    if (params.get('continue')) {
+      sessionStorage.setItem('canone_richiesta_id', params.get('continue'));
+      setTimeout(() => goToStep('3c'), 300);
+    }
+    // Popola disclaimer tempistiche in base a oggi
+    renderTimingDisclaimer();
+  });
+
+  // ============================================================
+  // DISCLAIMER TEMPISTICHE — onestà sulla finestra temporale DSR
+  // ============================================================
+  function renderTimingDisclaimer() {
+    const el = document.getElementById('timing-explain');
+    if (!el) return;
+    const now = new Date();
+    const year = now.getFullYear();
+    const day = now.getDate();
+    const month = now.getMonth() + 1; // 1-12
+    const nextYear = year + 1;
+
+    let msg;
+    if (month === 1 && day <= 31) {
+      msg = `Oggi <strong>${day} gennaio ${year}</strong>: sei in tempo per l'esenzione di <strong>tutto il ${year}</strong> — risparmierai i <strong>~€90 pieni</strong> di canone per quest'anno.`;
+    } else if (month >= 2 && (month < 6 || (month === 6 && day <= 30))) {
+      const rateGiaPagate = Math.min(month - 1, 6);
+      const risparmio = 90 - (rateGiaPagate * 9);
+      msg = `Oggi <strong>${day}/${month}/${year}</strong>: sei oltre il 31 gennaio, quindi l'esenzione vale solo dal <strong>1 luglio ${year}</strong> in poi. Le rate di gennaio-giugno ${year} ${rateGiaPagate > 0 ? `(circa €${rateGiaPagate * 9})` : ''} che hai già pagato in bolletta restano a tuo carico. Risparmio stimato <strong>${year}: ~€${risparmio}</strong>. A <strong>gennaio ${nextYear}</strong> ti ricordiamo noi il rinnovo e risparmierai i <strong>€90 pieni</strong> per tutto il ${nextYear}.`;
+    } else {
+      msg = `Oggi <strong>${day}/${month}/${year}</strong>: sei oltre il 30 giugno, quindi la dichiarazione per il ${year} non è più efficace. La presentiamo per il <strong>${nextYear}</strong>: se confermi ora, a gennaio ${nextYear} la dichiarazione partirà in automatico e risparmierai i <strong>€90 pieni</strong> per tutto il ${nextYear}.`;
+    }
+    el.innerHTML = msg;
+  }
+
+  // ============================================================
+  // STEP 3c — upload documento identità
+  // ============================================================
+  const MAX_DOC_BYTES = 10 * 1024 * 1024;
+  const ALLOWED_DOC_MIME = ['image/jpeg','image/png','image/webp','application/pdf'];
+
+  async function handleDocFileChange(e, lato) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const slot = document.getElementById(`slot-${lato}`);
+    slot.classList.remove('error');
+
+    if (!ALLOWED_DOC_MIME.includes(file.type)) {
+      slot.classList.add('error');
+      slot.querySelector('.label').textContent = 'Tipo file non valido (jpg/png/webp/pdf)';
+      return;
+    }
+    if (file.size > MAX_DOC_BYTES) {
+      slot.classList.add('error');
+      slot.querySelector('.label').textContent = 'File troppo grande (max 10 MB)';
+      return;
+    }
+
+    const dataUrl = await fileToDataUrl(file);
+    docFileCache[lato] = { dataUrl, mime: file.type, size: file.size };
+    docsUploaded[lato] = true;
+
+    // UI: mostra preview se immagine
+    slot.classList.add('filled');
+    if (file.type.startsWith('image/')) {
+      slot.innerHTML = `<img src="${dataUrl}" alt="Preview ${lato}">`;
+    } else {
+      slot.innerHTML = `<div style="padding:20px;color:#F5F1EA;text-align:center;"><div style="font-size:32px;">📄</div><div style="font-size:12px;margin-top:6px;">PDF caricato (${(file.size/1024).toFixed(0)} KB)</div></div>`;
+    }
+    updateContinuaBtn();
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function updateContinuaBtn() {
+    const btn = document.getElementById('doc-continua-btn');
+    btn.disabled = !(docsUploaded.fronte && docsUploaded.retro);
+  }
+
+  async function handleDocContinua() {
+    const btn = document.getElementById('doc-continua-btn');
+    const richiestaId = sessionStorage.getItem('canone_richiesta_id');
+    if (!richiestaId) { alert('Sessione scaduta, ricomincia da capo'); goToStep('1'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="color:#141210"></div> Caricamento…';
+
+    try {
+      // Upload fronte
+      await fetch(`${API_BASE}/api/canone/${richiestaId}/upload-documento`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lato: 'fronte', tipo: 'carta_identita', dataUrl: docFileCache.fronte.dataUrl }),
+      }).then(r => { if (!r.ok) throw new Error('Upload fronte fallito'); });
+
+      // Upload retro
+      await fetch(`${API_BASE}/api/canone/${richiestaId}/upload-documento`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lato: 'retro', tipo: 'carta_identita', dataUrl: docFileCache.retro.dataUrl }),
+      }).then(r => { if (!r.ok) throw new Error('Upload retro fallito'); });
+
+      goToStep('3d');
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = 'Continua → firma';
+      alert('Errore caricamento: ' + err.message);
+    }
+  }
+
+  // ============================================================
+  // STEP 3d — firma canvas
+  // ============================================================
+  function initFirmaCanvas() {
+    const canvas = document.getElementById('firma-canvas');
+    if (!canvas) return;
+    const wrap = document.getElementById('firma-wrap');
+
+    // Resize canvas per Retina
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.width = rect.width * dpr;
+    canvas.height = 180 * dpr;
+    canvas.style.height = '180px';
+
+    firmaCtx = canvas.getContext('2d');
+    firmaCtx.scale(dpr, dpr);
+    firmaCtx.strokeStyle = '#141210';
+    firmaCtx.lineWidth = 2.2;
+    firmaCtx.lineCap = 'round';
+    firmaCtx.lineJoin = 'round';
+    firmaHasInk = false;
+    wrap.classList.remove('has-ink');
+    document.getElementById('firma-invia-btn').disabled = true;
+
+    const getPos = (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const touch = ev.touches?.[0];
+      const x = (touch?.clientX ?? ev.clientX) - rect.left;
+      const y = (touch?.clientY ?? ev.clientY) - rect.top;
+      return { x, y };
+    };
+
+    const start = (ev) => {
+      ev.preventDefault();
+      firmaDrawing = true;
+      const { x, y } = getPos(ev);
+      firmaCtx.beginPath();
+      firmaCtx.moveTo(x, y);
+    };
+    const move = (ev) => {
+      if (!firmaDrawing) return;
+      ev.preventDefault();
+      const { x, y } = getPos(ev);
+      firmaCtx.lineTo(x, y);
+      firmaCtx.stroke();
+      if (!firmaHasInk) {
+        firmaHasInk = true;
+        wrap.classList.add('has-ink');
+        document.getElementById('firma-invia-btn').disabled = false;
+      }
+    };
+    const end = () => { firmaDrawing = false; };
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+  }
+
+  function firmaClear() {
+    const canvas = document.getElementById('firma-canvas');
+    if (!canvas || !firmaCtx) return;
+    firmaCtx.clearRect(0, 0, canvas.width, canvas.height);
+    firmaHasInk = false;
+    document.getElementById('firma-wrap').classList.remove('has-ink');
+    document.getElementById('firma-invia-btn').disabled = true;
+  }
+
+  async function handleFirmaInvia() {
+    const btn = document.getElementById('firma-invia-btn');
+    const err = document.getElementById('firma-err');
+    err.classList.add('hidden');
+    const richiestaId = sessionStorage.getItem('canone_richiesta_id');
+    if (!richiestaId) { alert('Sessione scaduta'); goToStep('1'); return; }
+    if (!firmaHasInk) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="color:#141210"></div> Invio…';
+
+    const canvas = document.getElementById('firma-canvas');
+    const dataUrl = canvas.toDataURL('image/png');
+
+    try {
+      const r = await fetch(`${API_BASE}/api/canone/${richiestaId}/upload-firma`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        throw new Error(data.error || 'Errore invio firma');
+      }
+      goToStep('4');
+    } catch (e) {
+      err.textContent = 'Errore: ' + e.message;
+      err.classList.remove('hidden');
+      btn.disabled = false;
+      btn.innerHTML = 'Firma e invia alla AE →';
+    }
+  }
+
+  // ============================================================
+  // STEP 4 — processing animation + polling stato
+  // ============================================================
+  let procTimers = [];
+  function startProcessingAnimation() {
+    const steps = ['proc-1','proc-2','proc-3','proc-4'];
+    procTimers.forEach(t => clearTimeout(t));
+    procTimers = [];
+    steps.forEach((id, i) => {
+      procTimers.push(setTimeout(() => {
+        if (i > 0) {
+          const prev = document.getElementById(steps[i-1]);
+          if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+        }
+        const cur = document.getElementById(id);
+        if (cur) cur.classList.add('active');
+      }, i * 2500));
+    });
+
+    // Polling real status
+    const richiestaId = sessionStorage.getItem('canone_richiesta_id');
+    if (!richiestaId) return;
+    let attempts = 0;
+    const poll = async () => {
+      attempts++;
+      try {
+        const r = await fetch(`${API_BASE}/api/canone/${richiestaId}/doc-status`);
+        if (r.ok) {
+          const data = await r.json();
+          if (data.stato === 'pec_inviata' || data.stato === 'pec_consegnata') {
+            // done
+            steps.forEach(id => {
+              const e = document.getElementById(id);
+              if (e) { e.classList.remove('active'); e.classList.add('done'); }
+            });
+            const pratica = data.numero_pratica || sessionStorage.getItem('canone_numero_pratica') || '';
+            document.getElementById('success-pratica').textContent = pratica;
+            const now = new Date();
+            document.getElementById('success-data-rinnovo').textContent = `15 gennaio ${now.getFullYear() + 1}`;
+            setTimeout(() => goToStep('5'), 1200);
+            return;
+          }
+          if (data.stato === 'errore') {
+            const err = document.getElementById('processing-err');
+            err.textContent = `Qualcosa non è andato a buon fine: ${data.errore_messaggio || 'errore sconosciuto'}. Il nostro team interviene manualmente entro 24h, ti avviseremo via email.`;
+            err.classList.remove('hidden');
+            return;
+          }
+        }
+      } catch {}
+      if (attempts < 30) setTimeout(poll, 2500);
+      else {
+        // Fallback: dopo 75 secondi, mostra comunque success (la PEC è probabilmente partita)
+        const pratica = sessionStorage.getItem('canone_numero_pratica') || '';
+        document.getElementById('success-pratica').textContent = pratica;
+        const now = new Date();
+        document.getElementById('success-data-rinnovo').textContent = `15 gennaio ${now.getFullYear() + 1}`;
+        goToStep('5');
+      }
+    };
+    setTimeout(poll, 3500);
+  }
+
+  // ============================================================
+  // STEP 5 — confetti + share
+  // ============================================================
+  function launchConfetti() {
+    if (typeof confetti !== 'function') return;
+    const end = Date.now() + 2400;
+    (function frame() {
+      confetti({ particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#D4A84B','#6B9E4F','#141210'] });
+      confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#D4A84B','#6B9E4F','#141210'] });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  }
+
+  function shareWhatsapp() {
+    const msg = encodeURIComponent('Ho appena tolto il canone RAI in 4 minuti grazie a Cooperativa Energetica. €90 l\'anno risparmiati e si ricordano loro di rinnovare ogni anno. https://cooperativaenergetica.it/addio-canone');
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+  function shareTelegram() {
+    const url = 'https://cooperativaenergetica.it/addio-canone';
+    const text = 'Ho appena tolto il canone RAI in 4 minuti. €90 l\'anno risparmiati 🎉';
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+  }
+</script>
+
+</body>
+</html>

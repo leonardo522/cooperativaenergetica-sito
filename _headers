@@ -1,0 +1,8 @@
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/addio-canone
+  Cache-Control: public, max-age=0, must-revalidate
+
+/addio-canone.html
+  Cache-Control: public, max-age=0, must-revalidate
